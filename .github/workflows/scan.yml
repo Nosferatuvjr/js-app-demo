@@ -1,0 +1,68 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  sast-tools:
+    name: Semgrep + Gitleaks + PHPStan
+    runs-on: ubuntu-latest
+    container:
+      image: nosferatuvjr/devsecops-tools:latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: semgrep --config=auto --json > semgrep-output.json
+
+      - name: Run Gitleaks
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE && gitleaks detect -f json -r gitleaks-output.json || true
+
+      - name: Run PHPStan
+        run: phpstan analyse --no-progress --error-format=json > phpstan-output.json || true
+
+      - name: Upload results to DefectDojo
+        if: env.DEFECTDOJO_API_KEY != ''
+        shell: bash
+        env:
+          DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
+          DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
+          ENGAGEMENT_ID: 5
+        run: |
+          for file in *.json; do
+            if [[ ! -s "$file" ]]; then
+              echo "⚠️  Pulando $file (vazio ou não existe)"
+              continue
+            fi
+      
+            if [[ "$file" == *semgrep* ]]; then
+              scan_type="Semgrep JSON Report"
+            elif [[ "$file" == *gitleaks* ]]; then
+              scan_type="Gitleaks Scan"
+            elif [[ "$file" == *phpstan* ]]; then
+              scan_type="PHPStan"
+            elif [[ "$file" == *nuclei* ]]; then
+              scan_type="Nuclei Scan"
+            else
+              echo "❌ Tipo de scan desconhecido para $file"
+              continue
+            fi
+      
+            echo "📤 Enviando $file como '$scan_type'..."
+      
+            curl -X POST "$DEFECTDOJO_URL/api/v2/import-scan/" \
+              -H "Authorization: Token $DEFECTDOJO_API_KEY" \
+              -H "Content-Type: multipart/form-data" \
+              -F "scan_type=$scan_type" \
+              -F "engagement=$ENGAGEMENT_ID" \
+              -F "file=@$file" \
+              -F "verified=true" \
+              -F "active=true" \
+              -F "minimum_severity=Low" \
+              -F "close_old_findings=true"
+          done

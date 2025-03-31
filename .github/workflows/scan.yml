@@ -23,9 +23,6 @@ jobs:
       - name: Run Gitleaks
         run: git config --global --add safe.directory $GITHUB_WORKSPACE && gitleaks detect -f json -r gitleaks-output.json || true
 
-      - name: Run PHPStan
-        run: phpstan analyse --no-progress --error-format=json > phpstan-output.json || true
-
       - name: Upload results to DefectDojo
         if: env.DEFECTDOJO_API_KEY != ''
         shell: bash

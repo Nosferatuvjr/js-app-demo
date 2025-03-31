@@ -32,7 +32,7 @@ jobs:
         env:
           DEFECTDOJO_URL: ${{ secrets.DEFECTDOJO_URL }}
           DEFECTDOJO_API_KEY: ${{ secrets.DEFECTDOJO_API_KEY }}
-          ENGAGEMENT_ID: 5
+          ENGAGEMENT_ID: 6
         run: |
           for file in *.json; do
             if [[ ! -s "$file" ]]; then

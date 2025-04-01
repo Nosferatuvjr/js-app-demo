@@ -33,7 +33,7 @@ jobs:
         run: |
           for file in *.json; do
             if [[ ! -s "$file" ]]; then
-              echo "⚠️  Pulando $file (vazio ou não existe)"
+              echo "Skipping $file (empty or not found)"
               continue
             fi
       
@@ -46,11 +46,11 @@ jobs:
             elif [[ "$file" == *nuclei* ]]; then
               scan_type="Nuclei Scan"
             else
-              echo "❌ Tipo de scan desconhecido para $file"
+              echo "Scan type not found for $file"
               continue
             fi
       
-            echo "📤 Enviando $file como '$scan_type'..."
+            echo "Send $file with '$scan_type'..."
       
             curl -X POST "$DEFECTDOJO_URL/api/v2/import-scan/" \
               -H "Authorization: Token $DEFECTDOJO_API_KEY" \

@@ -28,7 +28,7 @@ app.get('/read', (req, res) => {
 
 app.post('/eval', (req, res) => {
     const input = req.body.code;
-    const result = eval(input); // 👈 nunca faça isso!
+    const result = eval(input);
     res.send(`Result: ${result}`);
 });
 
